@@ -124,24 +124,30 @@ const ChatScreen = ({ navigation, route }) => {
       setInput("");
     }
   };
+  const keyboardContainerStyles = () => {
+    if (Platform.OS === "web") {
+      return {
+        height: dimensions.height - 70,
+      };
+    } else {
+      return {
+        flex: 1,
+      };
+    }
+  };
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === "ios" ? "padding" : null}
-      style={{ flex: 1 }}
+    <SafeAreaView
+      style={{
+        flex: 1,
+        backgroundColor: "white",
+      }}
     >
-      <SafeAreaView
-        style={{
-          flex: 1,
-          backgroundColor: "white",
-        }}
+      <StatusBar style="light" />
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : null}
+        style={{ flex: 1 }}
       >
-        <StatusBar style="light" />
-        <View
-          style={{
-            height: dimensions.height - StatusBar.currentHeight,
-          }}
-        >
-          {" "}
+        <View style={keyboardContainerStyles()}>
           <View style={{ flex: 15 }}>
             <ScrollView
               style={styles.messages}
@@ -180,15 +186,18 @@ const ChatScreen = ({ navigation, route }) => {
               onChangeText={(text) => {
                 setInput(text);
               }}
-              style={styles.textInput}
+              style={[
+                styles.textInput,
+                Platform.OS === "web" ? { outlineWidth: 0 } : {},
+              ]}
             />
             <TouchableOpacity activeOpacity={0.5} onPress={sendMessage}>
               <Ionicons name="send" size={24} color="#2B68E6" />
             </TouchableOpacity>
           </View>
         </View>
-      </SafeAreaView>
-    </KeyboardAvoidingView>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 };
 
@@ -230,5 +239,6 @@ const styles = StyleSheet.create({
     height: 40,
     borderRadius: 30,
     marginRight: 15,
+    borderColor: "white",
   },
 });

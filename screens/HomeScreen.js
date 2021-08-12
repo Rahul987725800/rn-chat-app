@@ -12,35 +12,52 @@ import { GlobalContext } from "../state/GlobalContext";
 const HomeScreen = ({ navigation }) => {
   const { user, socket } = useContext(GlobalContext);
   const [users, setUsers] = useState([]);
+  const sortUsers = (users) => {
+    const usersWhichHaveNewMessage = users.filter((u) => u.hasNewMessage);
+    const usersWhichDontHaveNewMessage = users.filter((u) => !u.hasNewMessage);
+
+    return [...usersWhichHaveNewMessage, ...usersWhichDontHaveNewMessage];
+  };
   useEffect(() => {
     (async () => {
       const response = await axios.get(`${serverUrl}/users/${user._id}`);
       console.log(response.data);
-
-      setUsers(
-        response.data.map((user) => {
-          return {
-            ...user,
-            hasNewMessage: !user.read,
-          };
-        })
-      );
+      const usersDetails = response.data.map((user) => {
+        return {
+          ...user,
+          hasNewMessage: !user.read,
+        };
+      });
+      setUsers(sortUsers(usersDetails));
     })();
   }, []);
+
   useEffect(() => {
     socket.on("get-message", (data) => {
       const { from, to, msg, roomID } = data;
       setUsers((prev) => {
-        return prev.map((user) => {
-          if (user._id === from) {
-            return {
-              ...user,
-              hasNewMessage: true,
-            };
-          }
-          return user;
-        });
+        const userWhichHasNewMessage = prev.find((user) => user._id === from);
+        if (userWhichHasNewMessage) {
+          let updatedUsers = prev.filter(
+            (u) => u._id !== userWhichHasNewMessage._id
+          );
+          updatedUsers.unshift({
+            ...userWhichHasNewMessage,
+            hasNewMessage: true,
+          });
+          return updatedUsers;
+        }
+        return prev;
       });
+    });
+
+    socket.on("user-created", (u) => {
+      if (u._id !== user._id) {
+        setUsers((prev) => {
+          return [...prev, { ...u, hasNewMessage: false }];
+        });
+      }
+      socket.emit("join", user._id);
     });
   }, []);
   const enterChat = (roomID, email) => {
@@ -49,15 +66,17 @@ const HomeScreen = ({ navigation }) => {
       user: user._id,
     });
     setUsers((prev) => {
-      return prev.map((u) => {
-        if (u.email === email) {
-          return {
-            ...u,
-            hasNewMessage: false,
-          };
-        }
-        return u;
-      });
+      return sortUsers(
+        prev.map((u) => {
+          if (u.email === email) {
+            return {
+              ...u,
+              hasNewMessage: false,
+            };
+          }
+          return u;
+        })
+      );
     });
     navigation.navigate("Chat", {
       roomID,
@@ -66,9 +85,9 @@ const HomeScreen = ({ navigation }) => {
   };
   return (
     <ScrollView>
-      {users.map((user) => (
+      {users.map((user, i) => (
         <CustomListItem
-          key={user.roomID}
+          key={i}
           id={user.roomID}
           email={user.email}
           enterChat={() => {

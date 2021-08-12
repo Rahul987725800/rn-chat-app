@@ -9,7 +9,7 @@ import HomeScreen from "./screens/HomeScreen";
 import ChatScreen from "./screens/ChatScreen";
 import { GlobalContext, GlobalProvider } from "./state/GlobalContext";
 const Stack = createStackNavigator();
-export const serverUrl = "http://192.168.1.108:2000";
+export const serverUrl = "https://pep-chat.herokuapp.com";
 const globalScreenOptions = {
   headerStyle: {
     backgroundColor: "#2C6BED",

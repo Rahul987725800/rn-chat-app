@@ -1,21 +1,55 @@
-import { StatusBar } from 'expo-status-bar';
-import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
-
+import React, { useEffect, useContext } from "react";
+import io from "socket.io-client";
+import { createStackNavigator } from "@react-navigation/stack";
+import { NavigationContainer } from "@react-navigation/native";
+import { SafeAreaProvider } from "react-native-safe-area-context";
+import { StyleSheet } from "react-native";
+import SignupScreen from "./screens/SignupScreen";
+import HomeScreen from "./screens/HomeScreen";
+import ChatScreen from "./screens/ChatScreen";
+import { GlobalContext, GlobalProvider } from "./state/GlobalContext";
+const Stack = createStackNavigator();
+export const serverUrl = "http://192.168.1.108:2000";
+const globalScreenOptions = {
+  headerStyle: {
+    backgroundColor: "#2C6BED",
+  },
+  headerTitleStyle: {
+    color: "white",
+  },
+  headerTintColor: "white",
+};
 export default function App() {
   return (
-    <View style={styles.container}>
-      <Text>Open up App.js to start working on your app!</Text>
-      <StatusBar style="auto" />
-    </View>
+    <GlobalProvider>
+      <Child />
+    </GlobalProvider>
   );
 }
+function Child() {
+  const { setSocket } = useContext(GlobalContext);
+  useEffect(() => {
+    const socket = io(serverUrl);
+    socket.on("connect", () => {
+      console.log("you connected with id : " + socket.id);
+    });
+    socket.on("room-joined", (data) => {
+      console.log("room-joined");
+      console.log(data);
+    });
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-});
+    setSocket(socket);
+  }, [setSocket]);
+  return (
+    <SafeAreaProvider>
+      <NavigationContainer>
+        <Stack.Navigator screenOptions={globalScreenOptions}>
+          <Stack.Screen name="Signup" component={SignupScreen} />
+          <Stack.Screen name="Home" component={HomeScreen} />
+          <Stack.Screen name="Chat" component={ChatScreen} />
+        </Stack.Navigator>
+      </NavigationContainer>
+    </SafeAreaProvider>
+  );
+}
+const styles = StyleSheet.create({});
